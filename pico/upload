@@ -1,0 +1,4 @@
+#!/bin/sh
+cd `dirname $0`
+
+picotool load build/ezhm.elf -f && sleep 1 && cat /dev/ttyACM0

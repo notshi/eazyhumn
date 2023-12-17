@@ -1,0 +1,10 @@
+#!/bin/sh
+cd `dirname $0`
+
+#require.sh arm-none-eabi-gcc
+
+mkdir -p build
+cd build
+cmake ..
+make "$@"
+
