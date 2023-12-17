@@ -8,6 +8,7 @@
 #define I2C_PORT i2c1
 #define DEV_SDA_PIN     (6)
 #define DEV_SCL_PIN     (7)
+#define DEV_LED_PIN     (25)
 
 bool reserved_addr(uint8_t addr) {
   return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
@@ -35,15 +36,20 @@ int main() {
     stdio_init_all();
     sleep_ms(1000);
 
+    gpio_init(DEV_LED_PIN);
+    gpio_set_dir(DEV_LED_PIN, GPIO_OUT);
+
     i2c_init(I2C_PORT, 100 * 1000);
     gpio_set_function(DEV_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(DEV_SCL_PIN, GPIO_FUNC_I2C);
     gpio_pull_up(DEV_SDA_PIN);
     gpio_pull_up(DEV_SCL_PIN);
+    bi_decl(bi_2pins_with_func(DEV_SDA_PIN, DEV_SCL_PIN, GPIO_FUNC_I2C));
     i2c_scan();
     int idx=0;
     while (true)
     {
+        gpio_put(DEV_LED_PIN, (idx&1) ? 1 : 0); // flash led/screen
         idx++;
         printf("%d Hello again, old world!\n",idx);
         sleep_ms(1000);
