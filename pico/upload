@@ -1,4 +1,4 @@
 #!/bin/sh
 cd `dirname $0`
 
-picotool load -x build/ezhm.elf -f && sleep 1 && cat /dev/ttyACM0
+picotool load -x build/ezhm.elf -f && sleep 1 && cat -u /dev/ttyACM0 #| hexdump -C

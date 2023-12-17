@@ -10,30 +10,32 @@
 #define DEV_SCL_PIN     (7)
 #define DEV_LED_PIN     (25)
 
-bool reserved_addr(uint8_t addr) {
-  return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
-}
-
 void i2c_scan(){
-  printf("\nI2C Bus Scan \n");
-	printf("   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
-	for (int addr = 0; addr < (1 << 7); ++addr) {
-			if (addr % 16 == 0) {					printf("%02x ", addr);			}
-			int ret;
-			uint8_t rxdata;
-			if (reserved_addr(addr))
-					ret = PICO_ERROR_GENERIC;
-			else
-					ret = i2c_read_blocking(I2C_PORT, addr, &rxdata, 1, false);
-
-			printf(ret < 0 ? "." : "@");
-			printf(addr % 16 == 15 ? "\n" : "  ");
+  printf("\nI2C Bus Scan : ");
+	for( int addr = 0x08 ; addr < 0x78 ; ++addr )
+    {
+        int ret=-1;
+        uint8_t rxdata[4];
+        if(! ( addr>=0x40 && addr<=0x41 ) ) // this device bulshit
+        {
+            ret = i2c_read_blocking(I2C_PORT, addr, rxdata, 1, false);
+        }
+        if(ret<0)
+        {
+            printf(".");
+        }
+        else
+        {
+            printf(".%02X" , addr);
+        }
 	}
+  printf("\n");
 }
 
 
 int main() {
     stdio_init_all();
+    stdio_set_translate_crlf(&stdio_usb, false); // disable windows bullshit
     sleep_ms(1000);
 
     gpio_init(DEV_LED_PIN);
@@ -45,14 +47,30 @@ int main() {
     gpio_pull_up(DEV_SDA_PIN);
     gpio_pull_up(DEV_SCL_PIN);
     bi_decl(bi_2pins_with_func(DEV_SDA_PIN, DEV_SCL_PIN, GPIO_FUNC_I2C));
+    
     i2c_scan();
+
     int idx=0;
     while (true)
     {
         gpio_put(DEV_LED_PIN, (idx&1) ? 1 : 0); // flash led/screen
         idx++;
-        printf("%d Hello again, old world!\n",idx);
-        sleep_ms(1000);
+
+        uint8_t rxdata[4];
+        rxdata[0]=0x00;
+        i2c_write_blocking(I2C_PORT, 0x41, rxdata+0, 1, false);
+        i2c_read_blocking(I2C_PORT, 0x41, rxdata+0, 4, false);
+
+        printf("%d : ",idx);
+        printf("%02x %02x %02x %02x\n",rxdata[0],rxdata[1],rxdata[2],rxdata[3]);
+
+        rxdata[0]=0x70+(3*((idx>>3)&7));
+        rxdata[1]=0xFF*((idx&1)?1:0);
+        rxdata[2]=0xFF*((idx&2)?1:0);
+        rxdata[3]=0xFF*((idx&4)?1:0);
+        i2c_write_blocking(I2C_PORT, 0x41, rxdata+0, 4, false);
+
+        sleep_ms(100);
     }
 }
 
