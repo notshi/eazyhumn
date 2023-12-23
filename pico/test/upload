@@ -1,0 +1,6 @@
+#!/bin/sh
+
+#use current dir
+#cd `dirname $0`
+
+picotool load -x build/main.elf -f && sleep 1 && cat -u /dev/ttyACM0 #| hexdump -C
